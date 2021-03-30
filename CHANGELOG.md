@@ -1,3 +1,8 @@
+# 1.0.8
+
+- For mulipart/form-data not file params write to postParams
+- Translate pubspec to English
+
 # 1.0.7
 
 - Add Null Safety support

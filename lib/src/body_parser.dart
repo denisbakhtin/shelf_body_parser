@@ -55,23 +55,23 @@ Future<BodyParseResult> parseBodyFromStream(
           String name = header.parameters['name']!;
 
           String? filename = header.parameters['filename'];
-          if (filename == null) {
+          if (filename != null) {
             List list = result.postFileParams[name] ?? [];
+            list.add(FileParams(
+                mimeType:
+                    MediaType.parse(part.headers['content-type']!).mimeType,
+                name: name,
+                filename: filename,
+                part: part));
+            result.postFileParams[name] = list;
+          } else {
+            // if this part is not file
             BytesBuilder builder = await part.fold(
                 BytesBuilder(copy: false),
                 (BytesBuilder b, List<int> d) =>
                     b..add(d is! String ? d : (d as String).codeUnits));
-            list.add(utf8.decode(builder.takeBytes()));
-            result.postFileParams[name] = list;
-            continue;
+            result.postParams[name] = utf8.decode(builder.takeBytes());
           }
-          List list = result.postFileParams[name] ?? [];
-          list.add(FileParams(
-              mimeType: MediaType.parse(part.headers['content-type']!).mimeType,
-              name: name,
-              filename: filename,
-              part: part));
-          result.postFileParams[name] = list;
         }
       } else if (contentType.mimeType == 'application/json') {
         result.postParams.addAll(
