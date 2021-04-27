@@ -36,7 +36,7 @@ Future<BodyParseResult> parseBodyFromStream(
   }
 
   Future<String> getBody() {
-    return stream.transform(utf8.decoder).join();
+    return utf8.decoder.bind(stream).join();
   }
 
   try {

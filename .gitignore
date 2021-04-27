@@ -2,3 +2,4 @@
 .idea/
 *.iml
 .dart_tool/
+pubspec.lock
