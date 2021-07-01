@@ -47,7 +47,7 @@ Future<BodyParseResult> parseBodyFromStream(
     if (contentType != null) {
       if (contentType.type == 'multipart' &&
           contentType.parameters.containsKey('boundary')) {
-        var parts = stream.transform(
+        var parts = stream.cast<List<int>>().transform(
             MimeMultipartTransformer(contentType.parameters['boundary']!));
 
         await for (MimeMultipart part in parts) {
