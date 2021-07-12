@@ -39,9 +39,48 @@ Future<BodyParseResult> parseBodyFromStream(
     return utf8.decoder.bind(stream).join();
   }
 
+  /// Taken from Uri.splitQueryString and modified to respect multiple (array) values
+  /// Splits the [query] into a map according to the rules
+  /// specified for FORM post in the [HTML 4.01 specification section
+  /// 17.13.4](http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13.4 "HTML 4.01 section 17.13.4").
+  ///
+  /// Each key and value in the returned map has been decoded. If the [query]
+  /// is the empty string an empty map is returned.
+  ///
+  /// Keys in the query string that have no value are mapped to the
+  /// empty string.
+  ///
+  /// Each query component will be decoded using [encoding]. The default encoding
+  /// is UTF-8.
+  Map<String, dynamic> splitQueryString(String query,
+      {Encoding encoding = utf8}) {
+    return query.split("&").fold({}, (map, element) {
+      int index = element.indexOf("=");
+      if (index == -1) {
+        if (element != "") {
+          map[Uri.decodeQueryComponent(element, encoding: encoding)] = "";
+        }
+      } else if (index != 0) {
+        var key = Uri.decodeQueryComponent(element.substring(0, index),
+            encoding: encoding);
+        var value = Uri.decodeQueryComponent(element.substring(index + 1),
+            encoding: encoding);
+        if (key.endsWith("[]")) {
+          if (map.containsKey(key))
+            (map[key] as List<String>)..add(value);
+          else
+            map[key] = List<String>.empty(growable: true)..add(value);
+        } else {
+          map[key] = value;
+        }
+      }
+      return map;
+    });
+  }
+
   try {
     if (requestUri.hasQuery) {
-      result.query = Uri.splitQueryString(requestUri.query);
+      result.query = splitQueryString(requestUri.query);
     }
 
     if (contentType != null) {
@@ -77,7 +116,7 @@ Future<BodyParseResult> parseBodyFromStream(
         result.postParams.addAll(
             _foldToStringDynamic(json.decode(await getBody()) as Map) ?? {});
       } else if (contentType.mimeType == 'application/x-www-form-urlencoded') {
-        result.postParams = Uri.splitQueryString(await getBody());
+        result.postParams = splitQueryString(await getBody());
       }
     }
   } catch (e, st) {
